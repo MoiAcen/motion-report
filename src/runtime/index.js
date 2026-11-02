@@ -151,11 +151,13 @@ export function start(data) {
       const stamp = el.querySelector('.stamp');
       return gsap
         .timeline()
-        .to(dim, { opacity: 1, duration: dur.slow * D })
-        // 印章慢慢蓋下：先縮放落下，接一個小幅回彈，之後保留在畫面上
-        .fromTo(stamp, { opacity: 0, scale: 2.4, rotation: -14 }, { opacity: 1, scale: 1, rotation: -14, duration: dur.mid * D, ease: 'power3.in' })
-        .to(stamp, { scale: 0.94, duration: 0.12 * D, ease: 'power1.out' })
-        .to(stamp, { scale: 1, duration: 0.2 * D, ease: 'power2.out' });
+        // 先停一下，讓觀眾看完 diff，再開始蓋章
+        .to({}, { duration: 1.5 * D })
+        .to(dim, { opacity: 1, duration: dur.mid * D })
+        // 印章蓋下：先縮放落下，接一個小幅回彈，之後保留在畫面上
+        .fromTo(stamp, { opacity: 0, scale: 2.4, rotation: -14 }, { opacity: 1, scale: 1, rotation: -14, duration: dur.fast * D, ease: 'power4.in' })
+        .to(stamp, { scale: 0.94, duration: 0.08 * D, ease: 'power1.out' })
+        .to(stamp, { scale: 1, duration: 0.14 * D, ease: 'power2.out' });
     }
     if (kind === 'typewriter') {
       const full = Array.from(el.dataset.text ?? el.textContent);
