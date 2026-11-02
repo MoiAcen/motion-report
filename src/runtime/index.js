@@ -97,6 +97,8 @@ export function start(data) {
       gsap.set(el, { opacity: 0 });
     } else if (kind === 'highlight') {
       gsap.set(el, { backgroundSize: '0% 100%' });
+    } else if (kind === 'wipe') {
+      gsap.set(el, { clipPath: 'inset(0 100% 0 0)' });
     }
   }
 
@@ -106,6 +108,9 @@ export function start(data) {
     }
     if (kind === 'highlight') {
       return gsap.fromTo(el, { backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%', duration: dur.mid * D, ease: 'power2.out' });
+    }
+    if (kind === 'wipe') {
+      return gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.mid * D, ease: 'power2.inOut' });
     }
     if (kind === 'typewriter') {
       const full = Array.from(el.dataset.text ?? el.textContent);
