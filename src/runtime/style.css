@@ -1,0 +1,42 @@
+/* 投影片基本樣式：全部使用 :root 的 token（由 build 注入 deck.md 的 theme） */
+html, body { background: var(--bg); }
+.reveal { font-family: var(--font-body), system-ui, sans-serif; color: var(--fg); }
+.reveal .slides section { text-align: left; color: var(--fg); }
+/* 每頁 section 佔滿投影片；內容垂直置中，共用元素以 section 為定位基準 */
+.reveal .slides section.page { height: 100%; }
+.reveal .page-body {
+  position: relative; height: 100%; box-sizing: border-box; padding: 0 8%;
+  display: flex; flex-direction: column; justify-content: center; gap: 22px;
+}
+.reveal h1, .reveal h2 {
+  font-family: var(--font-display), serif; font-weight: 700; color: var(--fg);
+  text-transform: none; text-shadow: none; margin: 0; line-height: 1.15; text-wrap: balance;
+}
+.reveal h1 { font-size: 84px; }
+.reveal h2 { font-size: 56px; }
+.reveal p { margin: 0; font-size: 26px; color: var(--muted); max-width: 52ch; }
+.reveal .eyebrow {
+  font-family: var(--font-mono), monospace; font-size: 20px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--accent); margin: 0;
+}
+.reveal .rule { width: 160px; height: 6px; background: var(--accent-2); }
+.reveal ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.reveal ul li { font-size: 32px; padding-left: 28px; position: relative; color: var(--fg); }
+.reveal ul li::before { content: ""; position: absolute; left: 0; top: .6em; width: 10px; height: 10px; background: var(--accent); }
+.reveal .num { font-family: var(--font-mono), monospace; font-size: 200px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--fg); }
+.bars { display: grid; gap: 12px; max-width: 640px; }
+.bar-row { display: grid; grid-template-columns: 120px 1fr; gap: 16px; align-items: center; font-size: 22px; color: var(--muted); }
+.bar { position: relative; height: 16px; background: color-mix(in srgb, var(--fg) 12%, transparent); overflow: hidden; }
+.bar-fill { position: absolute; inset: 0; background: var(--accent-2); display: block; }
+
+/* 跨頁共用元素 */
+.shared { position: absolute; background: var(--accent); border-radius: 2px; pointer-events: none; z-index: 2; }
+.motion-layer { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
+.ghost { position: absolute; z-index: 31; border-radius: 2px; }
+
+/* 頁碼：右下角 */
+.page-number {
+  position: absolute; right: 3%; bottom: 3%; font-family: var(--font-mono), monospace;
+  font-size: 18px; color: var(--muted); z-index: 40; pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
