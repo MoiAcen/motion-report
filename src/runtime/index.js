@@ -33,6 +33,7 @@ export function start(data) {
   }
 
   let activeTl = null;
+  let jitterTimers = []; // data-motion="jitter" 的隨機跳動計時器，換頁時清除
   let flightTweens = [];
   let lastRects = null; // 上一頁共用元素的位置（以 .reveal 為座標）
 
@@ -97,6 +98,10 @@ export function start(data) {
       gsap.set(el, { opacity: 0 });
     } else if (kind === 'highlight') {
       gsap.set(el, { backgroundSize: '0% 100%' });
+    } else if (kind === 'knob') {
+      gsap.set(el, { left: '0%' });
+    } else if (kind === 'jitter') {
+      gsap.set(el, { scaleX: 0, transformOrigin: 'left center' });
     } else if (kind === 'wipe') {
       gsap.set(el, { clipPath: 'inset(0 100% 0 0)' });
     } else if (kind === 'stamp-sequence') {
@@ -122,6 +127,13 @@ export function start(data) {
     }
     if (kind === 'wipe') {
       return gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.mid * D, ease: 'power2.inOut' });
+    }
+    if (kind === 'knob') {
+      // 拉桿的圓點從 0 滑到 data-to（百分比）
+      return gsap.fromTo(el, { left: '0%' }, { left: `${el.dataset.to}%`, duration: dur.slow * D, ease: 'power2.inOut' });
+    }
+    if (kind === 'jitter') {
+      return null; // 隨機跳動在 playSection 結尾啟動
     }
     if (kind === 'runaway') {
       // 數字往上計數，加速衝高，位數超出畫面右邊界後被裁掉，最後到 9,999,999,999,999
@@ -177,6 +189,8 @@ export function start(data) {
   // 預設效果：依元素類型決定，對應 deck.md 的 presets
   function playSection(section) {
     if (activeTl) activeTl.kill();
+    jitterTimers.forEach(clearInterval);
+    jitterTimers = [];
     const tl = gsap.timeline();
     const targets = section.querySelectorAll(
       '.eyebrow, h1, h2, .rule, p:not(.eyebrow), ul, [data-count], .bar-fill, [data-motion]',
@@ -215,6 +229,18 @@ export function start(data) {
       }
     });
     activeTl = tl;
+
+    // 隨機跳動：每 0.45 秒在 base ± amp 之間取一個值，平滑移過去
+    section.querySelectorAll('[data-motion="jitter"]').forEach((el) => {
+      const base = Number(el.dataset.base ?? 0.5);
+      const amp = Number(el.dataset.amp ?? 0.3);
+      const tick = () => {
+        const v = Math.min(1, Math.max(0.05, base + (Math.random() * 2 - 1) * amp));
+        gsap.to(el, { scaleX: v, duration: 0.3 * D, ease: 'power1.out' });
+      };
+      gsap.to(el, { scaleX: base, duration: dur.mid * D, ease: 'power2.out', delay: 0.3 });
+      jitterTimers.push(setInterval(tick, 450));
+    });
   }
 
   function updatePageNumber(section) {
