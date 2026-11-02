@@ -3,7 +3,7 @@ title: 產品發佈回顧
 theme:
   bg: "#EEF0F3"
   fg: "#111827"
-  accent: "#1D4ED8"
+  accent: "#0076BC"  # 富邦藍，來源：Coloropedia（第三方），待官方確認
   font-display: "Noto Serif TC"
   font-body: "Noto Sans TC"
   font-mono: "JetBrains Mono"
