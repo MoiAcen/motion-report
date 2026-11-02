@@ -99,6 +99,8 @@ export function start(data) {
       gsap.set(el, { backgroundSize: '0% 100%' });
     } else if (kind === 'wipe') {
       gsap.set(el, { clipPath: 'inset(0 100% 0 0)' });
+    } else if (kind === 'stamp') {
+      gsap.set(el, { opacity: 0, scale: 2.4, rotation: -14 });
     }
   }
 
@@ -111,6 +113,14 @@ export function start(data) {
     }
     if (kind === 'wipe') {
       return gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.mid * D, ease: 'power2.inOut' });
+    }
+    if (kind === 'stamp') {
+      // 印章重重蓋下：先縮放落下，接一個小幅回彈
+      return gsap
+        .timeline()
+        .fromTo(el, { opacity: 0, scale: 2.4, rotation: -14 }, { opacity: 1, scale: 1, rotation: -14, duration: dur.fast * D, ease: 'power4.in' })
+        .to(el, { scale: 0.94, duration: 0.08 * D, ease: 'power1.out' })
+        .to(el, { scale: 1, duration: 0.14 * D, ease: 'power2.out' });
     }
     if (kind === 'typewriter') {
       const full = Array.from(el.dataset.text ?? el.textContent);
