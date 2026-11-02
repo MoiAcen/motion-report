@@ -128,7 +128,7 @@ export function start(data) {
       const obj = { v: 0 };
       return gsap.to(obj, {
         v: 9999999999999,
-        duration: dur.slow * 2.4 * D,
+        duration: dur.slow * 1.2 * D,
         ease: 'power2.in',
         onUpdate: () => (el.textContent = Math.round(obj.v).toLocaleString('en-US')),
       });
