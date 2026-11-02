@@ -4,6 +4,7 @@ theme:
   bg: "#EEF0F3"
   fg: "#111827"
   accent: "#0076BC"  # 富邦藍，來源：Coloropedia（第三方），待官方確認
+  accent-2: "#00BCD8"  # 富邦第二色（Turquoise Surf），來源同上，待確認是否為官方綠色
   font-display: "Noto Serif TC"
   font-body: "Noto Sans TC"
   font-mono: "JetBrains Mono"
