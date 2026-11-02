@@ -230,15 +230,23 @@ export function start(data) {
     });
     activeTl = tl;
 
-    // 隨機跳動：每 0.45 秒在 base ± amp 之間取一個值，平滑移過去
+    // 隨機跳動：同一個 data-group 內的條共用同一個隨機倍率（例如同一份 token 數），
+    // 每 0.45 秒套用一次，因此各條之間的比例維持不變
+    const groups = {};
     section.querySelectorAll('[data-motion="jitter"]').forEach((el) => {
-      const base = Number(el.dataset.base ?? 0.5);
-      const amp = Number(el.dataset.amp ?? 0.3);
+      const key = el.dataset.group ?? `solo-${Math.random()}`;
+      (groups[key] ??= []).push(el);
+    });
+    Object.values(groups).forEach((els) => {
+      const amp = Number(els[0].dataset.amp ?? 0.3);
       const tick = () => {
-        const v = Math.min(1, Math.max(0.05, base + (Math.random() * 2 - 1) * amp));
-        gsap.to(el, { scaleX: v, duration: 0.3 * D, ease: 'power1.out' });
+        const f = 1 + (Math.random() * 2 - 1) * amp;
+        els.forEach((el) => {
+          const base = Number(el.dataset.base ?? 0.5);
+          gsap.to(el, { scaleX: Math.min(1, base * f), duration: 0.3 * D, ease: 'power1.out' });
+        });
       };
-      gsap.to(el, { scaleX: base, duration: dur.mid * D, ease: 'power2.out', delay: 0.3 });
+      els.forEach((el) => gsap.to(el, { scaleX: Number(el.dataset.base ?? 0.5), duration: dur.mid * D, ease: 'power2.out', delay: 0.3 }));
       jitterTimers.push(setInterval(tick, 450));
     });
   }
