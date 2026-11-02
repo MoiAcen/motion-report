@@ -3,8 +3,8 @@ title: 產品發佈回顧
 theme:
   bg: "#EEF0F3"
   fg: "#111827"
-  accent: "#0076BC"  # 富邦藍，來源：Coloropedia（第三方），待官方確認
-  accent-2: "#00BCD8"  # 富邦第二色（Turquoise Surf），來源同上，待確認是否為官方綠色
+  accent: "#0095b8"  # 富邦藍，來源：使用者提供的富邦色票圖，HEX #0095b8 / RGB 0, 149, 184
+  accent-2: "#00a29d"  # 富邦綠，來源：同上，HEX #00a29d / RGB 0, 162, 157
   font-display: "Noto Serif TC"
   font-body: "Noto Sans TC"
   font-mono: "JetBrains Mono"
