@@ -1,0 +1,19 @@
+{
+  "name": "motion-report",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Build motion-design slide decks from Markdown into single HTML files",
+  "type": "module",
+  "scripts": {
+    "build": "node src/build/build.mjs",
+    "build:example": "node src/build/build.mjs example"
+  },
+  "dependencies": {
+    "gray-matter": "4.0.3",
+    "gsap": "3.15.0",
+    "marked": "18.1.1",
+    "reveal.js": "6.0.2",
+    "vite": "8.3.4",
+    "vite-plugin-singlefile": "2.3.4"
+  }
+}

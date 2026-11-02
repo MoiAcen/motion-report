@@ -1,0 +1,160 @@
+// 投影片執行端：reveal.js 負責翻頁，GSAP 負責動效與跨頁共用元素。
+import Reveal from 'reveal.js';
+import 'reveal.js/reset.css';
+import 'reveal.js/reveal.css';
+import gsap from 'gsap';
+import './style.css';
+
+export function start(data) {
+  const deck = data.deck ?? {};
+  const motion = deck.motion ?? {};
+  const dur = { fast: 0.3, mid: 0.6, slow: 1.0, ...(motion.duration ?? {}) };
+  const ease = motion.ease ?? 'power3.out';
+  const stagger = motion.stagger ?? 0.1;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const D = reduce && motion['reduced-motion'] !== 'off' ? 0.01 : 1;
+  const pn = deck['page-number'] ?? {};
+  const pnFormat = pn.format ?? '{n} / {total}';
+  const total = data.total;
+
+  const root = document.querySelector('.reveal');
+
+  // 共用元素飛行層（不參與 reveal 的縮放，座標以 .reveal 為準）
+  const layer = document.createElement('div');
+  layer.className = 'motion-layer';
+  root.appendChild(layer);
+
+  // 頁碼
+  let pageNumberEl = null;
+  if (pn.show !== false) {
+    pageNumberEl = document.createElement('div');
+    pageNumberEl.className = 'page-number';
+    root.appendChild(pageNumberEl);
+  }
+
+  let activeTl = null;
+  let flightTweens = [];
+  let lastRects = null; // 上一頁共用元素的位置（以 .reveal 為座標）
+
+  function clearFlights() {
+    flightTweens.forEach((t) => t.kill());
+    flightTweens = [];
+    layer.innerHTML = '';
+    root.querySelectorAll('[data-shared]').forEach((el) => (el.style.visibility = ''));
+  }
+
+  function measureShared(section) {
+    const base = root.getBoundingClientRect();
+    const out = {};
+    section.querySelectorAll('[data-shared]').forEach((el) => {
+      const r = el.getBoundingClientRect();
+      out[el.dataset.shared] = {
+        x: r.left - base.left,
+        y: r.top - base.top,
+        w: r.width,
+        h: r.height,
+        bg: getComputedStyle(el).backgroundColor,
+        el,
+      };
+    });
+    return out;
+  }
+
+  // 同一個 id 在相鄰兩頁出現時，從舊位置飛到新位置
+  function flyShared(from, to) {
+    Object.keys(from).forEach((key) => {
+      const f = from[key];
+      const t = to[key];
+      if (!t) return;
+      const ghost = document.createElement('div');
+      ghost.className = 'shared ghost';
+      ghost.style.cssText = `left:${f.x}px;top:${f.y}px;width:${f.w}px;height:${f.h}px;background:${f.bg}`;
+      layer.appendChild(ghost);
+      t.el.style.visibility = 'hidden';
+      flightTweens.push(
+        gsap.to(ghost, {
+          left: t.x,
+          top: t.y,
+          width: t.w,
+          height: t.h,
+          duration: dur.slow * D,
+          ease: 'power3.inOut',
+          onComplete() {
+            ghost.remove();
+            t.el.style.visibility = '';
+          },
+        }),
+      );
+    });
+  }
+
+  // 預設效果：依元素類型決定，對應 deck.md 的 presets
+  function playSection(section) {
+    if (activeTl) activeTl.kill();
+    const tl = gsap.timeline();
+    const targets = section.querySelectorAll(
+      '.eyebrow, h1, h2, .rule, p:not(.eyebrow), ul, [data-count], .bar-fill',
+    );
+    let first = true;
+    const add = (anim) => {
+      tl.add(anim, first ? 0 : '-=0.15');
+      first = false;
+    };
+    targets.forEach((el) => {
+      if (el.matches('.eyebrow')) {
+        add(gsap.fromTo(el, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: dur.mid * D, ease }));
+      } else if (el.matches('h1')) {
+        add(gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.slow * D, ease: 'power2.inOut' }));
+      } else if (el.matches('h2')) {
+        add(gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.mid * D, ease: 'power2.inOut' }));
+      } else if (el.matches('.rule')) {
+        add(gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.mid * D, ease: 'power2.inOut' }));
+      } else if (el.matches('p')) {
+        add(gsap.fromTo(el, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: dur.mid * D, ease }));
+      } else if (el.matches('ul')) {
+        add(gsap.fromTo(el.querySelectorAll('li'), { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: dur.mid * D, ease, stagger: stagger * D }));
+      } else if (el.matches('[data-count]')) {
+        const to = Number(el.dataset.count);
+        const obj = { v: 0 };
+        el.textContent = '0';
+        add(gsap.to(obj, { v: to, duration: dur.slow * 1.4 * D, ease: 'power2.out', onUpdate: () => (el.textContent = Math.round(obj.v)) }));
+      } else if (el.matches('.bar-fill')) {
+        add(gsap.fromTo(el, { scaleX: 0 }, { scaleX: Number(el.dataset.fill ?? 1), transformOrigin: 'left center', duration: dur.slow * D, ease: 'power2.out' }));
+      }
+    });
+    activeTl = tl;
+  }
+
+  function updatePageNumber(section) {
+    if (!pageNumberEl || !section) return;
+    pageNumberEl.textContent = pnFormat.replace('{n}', section.dataset.number).replace('{total}', total);
+  }
+
+  function handle(current, previous) {
+    clearFlights();
+    const now = measureShared(current);
+    if (lastRects && previous && previous !== current) flyShared(lastRects, now);
+    lastRects = now;
+    playSection(current);
+    updatePageNumber(current);
+  }
+
+  const reveal = Reveal;
+  reveal.on('ready', (e) => handle(e.currentSlide, null));
+  reveal.on('slidechanged', (e) => handle(e.currentSlide, e.previousSlide));
+
+  reveal.initialize({
+    hash: false,
+    transition: 'none',
+    controls: true,
+    controlsLayout: 'edges',
+    progress: false,
+    slideNumber: false,
+    keyboard: true,
+    touch: true,
+    center: false,
+    width: 1280,
+    height: 720,
+    margin: 0.04,
+  });
+}
