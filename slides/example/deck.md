@@ -23,6 +23,10 @@ presets:
   count-up: 數字從 0 計數到目標值
 numbering:
   start: 1
+page-number:
+  show: true
+  position: bottom-right
+  format: "{n} / {total}"
 ---
 
 這是範例 deck，用來確認規格。內容取自動效範例頁。

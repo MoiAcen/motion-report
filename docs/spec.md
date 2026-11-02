@@ -1,6 +1,6 @@
-# Motion Report 規格（草案 v0）
+# Motion Report 規格（草案 v1）
 
-狀態：草案，待 MoiAcen 確認後才開始實作引擎。
+狀態：草案，待 MoiAcen 核可後才開始實作引擎。
 
 ## 目標
 
@@ -12,7 +12,8 @@
 slides/<deck-name>/        每份投影片一個資料夾
   deck.md                  第 0 頁：全域設定
   pages/001.md             每頁一檔，檔名數字即頁序
-  assets/                  圖片等素材（規劃中）
+  assets/                  圖片等素材
+themes/<name>.md           共用主題（多份 deck 可引用）
 src/                       渲染引擎（尚未實作）
 dist/                      build 產出：每個 deck 一個 single HTML
 docs/spec.md               本文件
@@ -28,7 +29,8 @@ title: 產品發佈回顧
 theme:
   bg: "#EEF0F3"
   fg: "#111827"
-  accent: "#1D4ED8"
+  accent: "#0095b8"            # 富邦藍，來源：使用者提供的色票
+  accent-2: "#00a29d"          # 富邦綠，來源：使用者提供的色票
   font-display: "Noto Serif TC"
   font-body: "Noto Sans TC"
   font-mono: "JetBrains Mono"
@@ -39,23 +41,29 @@ motion:
     slow: 1.0
   ease: power3.out
   stagger: 0.1
-  reduced-motion: shorten       # 偏好減少動態時，時長縮為接近 0
-presets:                        # 預設效果名稱 -> 說明（AI 與引擎都依此實作）
+  reduced-motion: shorten      # 偏好減少動態時，時長縮為接近 0
+presets:                       # 預設效果名稱 -> 說明（AI 與引擎都依此實作）
   fade-up: 從下方淡入上移 40px，時長用 mid
   wipe: 由左至右 clip 揭示，時長用 slow
   stagger-in: 子元素依序從左側滑入，間隔 stagger
   count-up: 數字從 0 計數到目標值
 numbering:
-  start: 1                      # 全環境頁碼從 1 起算，第 0 頁不計入
+  start: 1                     # 頁碼從 1 起算，第 0 頁不計入
+page-number:
+  show: true
+  position: bottom-right
+  format: "{n} / {total}"      # 例如 3 / 12
 ---
 ```
+
+`theme` 與 `motion` 可以改為引用 `themes/<name>.md`，細節實作前再定。
 
 ## 單頁：pages/NNN.md
 
 ```markdown
 ---
-layout: title                   # title | bullets | stat | free（待定）
-shared:                         # 可選：跨頁共用元素
+layout: title                  # 版型種類待實際做投影片時再增減
+shared:                        # 可選：跨頁共用元素
   mark:
     position: top-right
     size: 44px
@@ -69,7 +77,7 @@ shared:                         # 可選：跨頁共用元素
 
 - 標題：wipe
 - 副標題：fade-up，接在標題之後
-- 方塊 mark：共用元素，見下方
+- 方塊 mark：共用元素，見上方 shared
 ```
 
 ### 規則
@@ -91,6 +99,7 @@ shared:                         # 可選：跨頁共用元素
 
 - 全環境統一編號，由 `numbering.start` 起算，第 0 頁不計入。
 - 頁碼依 `pages/` 內的檔名數字排序。
+- 顯示在投影片右下角，格式為「頁數 / 總頁數」，例如 `3 / 12`。總頁數為 `pages/` 內的檔案數。
 
 ## 驗證
 
@@ -103,10 +112,13 @@ shared:                         # 可選：跨頁共用元素
 - 頁面動效：GSAP timeline。翻頁與導覽：reveal.js（或自寫輕量版本，待定）。
 - 套件版本實作時再鎖定精確版本。
 
-## 待決問題
+## 已決定與延後
 
-1. `layout` 的種類要有哪些？目前列出 title、bullets、stat、free。
-2. 共用元素的 `position` 與 `size` 是要用自然語言描述（引擎解析），還是固定列舉值？
-3. 圖片素材的放置與引用方式（`slides/<deck>/assets/`）是否可接受？
-4. 頁碼是否要顯示在投影片上？若要，位置與樣式由 deck.md 定義。
-5. 是否需要 deck 之間共用主題（例如 `themes/` 資料夾）？
+已決定：
+- 頁碼顯示在右下角，格式「頁數 / 總頁數」。
+- 圖片素材放在 `slides/<deck>/assets/`。
+- 需要共用主題，放在 `themes/`。
+
+延後，等實際做投影片時再決定：
+- 版型（layout）的種類要增減哪些。
+- 共用元素的位置與大小用自然語言描述，還是固定選項。
