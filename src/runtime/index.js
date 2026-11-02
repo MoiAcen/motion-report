@@ -106,6 +106,10 @@ export function start(data) {
       gsap.set(el.querySelector('.stamp'), { opacity: 0, scale: 2.4, rotation: -14 });
     } else if (kind === 'runaway') {
       el.textContent = '0';
+    } else if (kind === 'boom-sequence') {
+      gsap.set(el, { opacity: 1, x: 0 });
+      gsap.set(el.querySelector('.stamp-dim'), { opacity: 0 });
+      gsap.set(el.querySelector('.stamp'), { opacity: 0, scale: 3.2, rotation: -8 });
     }
   }
 
@@ -120,17 +124,27 @@ export function start(data) {
       return gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.mid * D, ease: 'power2.inOut' });
     }
     if (kind === 'runaway') {
-      // 數字不斷多出位數，超出畫面邊界：先 1，之後每一位都是 9
-      const obj = { t: 0 };
+      // 數字往上計數，加速衝高，位數超出畫面右邊界後被裁掉，最後到 9,999,999,999,999
+      const obj = { v: 0 };
       return gsap.to(obj, {
-        t: 1,
-        duration: dur.slow * 2 * D,
-        ease: 'power1.in',
-        onUpdate: () => {
-          const n = Math.round(obj.t * 40);
-          el.textContent = n <= 0 ? '0' : '1' + '9'.repeat(n - 1);
-        },
+        v: 9999999999999,
+        duration: dur.slow * 2.4 * D,
+        ease: 'power2.in',
+        onUpdate: () => (el.textContent = Math.round(obj.v).toLocaleString('en-US')),
       });
+    }
+    if (kind === 'boom-sequence') {
+      // 全畫面遮罩蓋下，爆字從 3 倍大小重重砸下，接著整個畫面抖動
+      const dim = el.querySelector('.stamp-dim');
+      const stamp = el.querySelector('.stamp');
+      return gsap
+        .timeline()
+        .to(dim, { opacity: 1, duration: 0.15 * D })
+        .fromTo(stamp, { opacity: 0, scale: 3.2, rotation: -8 }, { opacity: 1, scale: 1, rotation: -8, duration: dur.fast * D, ease: 'power4.in' })
+        .to(el, { x: -14, duration: 0.05 * D })
+        .to(el, { x: 14, duration: 0.05 * D })
+        .to(el, { x: -8, duration: 0.05 * D })
+        .to(el, { x: 0, duration: 0.05 * D });
     }
     if (kind === 'stamp-sequence') {
       const dim = el.querySelector('.stamp-dim');
