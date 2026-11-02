@@ -104,6 +104,8 @@ export function start(data) {
       gsap.set(el, { opacity: 1 });
       gsap.set(el.querySelector('.stamp-dim'), { opacity: 0 });
       gsap.set(el.querySelector('.stamp'), { opacity: 0, scale: 2.4, rotation: -14 });
+    } else if (kind === 'runaway') {
+      el.textContent = '0';
     }
   }
 
@@ -116,6 +118,19 @@ export function start(data) {
     }
     if (kind === 'wipe') {
       return gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.mid * D, ease: 'power2.inOut' });
+    }
+    if (kind === 'runaway') {
+      // 數字不斷多出位數，超出畫面邊界：先 1，之後每一位都是 9
+      const obj = { t: 0 };
+      return gsap.to(obj, {
+        t: 1,
+        duration: dur.slow * 2 * D,
+        ease: 'power1.in',
+        onUpdate: () => {
+          const n = Math.round(obj.t * 40);
+          el.textContent = n <= 0 ? '0' : '1' + '9'.repeat(n - 1);
+        },
+      });
     }
     if (kind === 'stamp-sequence') {
       const dim = el.querySelector('.stamp-dim');
