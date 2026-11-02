@@ -100,7 +100,7 @@ export function start(data) {
     } else if (kind === 'wipe') {
       gsap.set(el, { clipPath: 'inset(0 100% 0 0)' });
     } else if (kind === 'stamp-sequence') {
-      // 整組印章：遮罩淡入、印章蓋下、停留後整組淡出
+      // 整組印章：遮罩淡入、印章蓋下，之後保留在畫面上
       gsap.set(el, { opacity: 1 });
       gsap.set(el.querySelector('.stamp-dim'), { opacity: 0 });
       gsap.set(el.querySelector('.stamp'), { opacity: 0, scale: 2.4, rotation: -14 });
@@ -151,13 +151,11 @@ export function start(data) {
       const stamp = el.querySelector('.stamp');
       return gsap
         .timeline()
-        .to(dim, { opacity: 1, duration: dur.mid * D })
-        // 印章重重蓋下：先縮放落下，接一個小幅回彈
-        .fromTo(stamp, { opacity: 0, scale: 2.4, rotation: -14 }, { opacity: 1, scale: 1, rotation: -14, duration: dur.fast * D, ease: 'power4.in' })
-        .to(stamp, { scale: 0.94, duration: 0.08 * D, ease: 'power1.out' })
-        .to(stamp, { scale: 1, duration: 0.14 * D, ease: 'power2.out' })
-        .to({}, { duration: 0.8 * D })
-        .to(el, { opacity: 0, duration: dur.mid * D, ease: 'power2.in' });
+        .to(dim, { opacity: 1, duration: dur.slow * D })
+        // 印章慢慢蓋下：先縮放落下，接一個小幅回彈，之後保留在畫面上
+        .fromTo(stamp, { opacity: 0, scale: 2.4, rotation: -14 }, { opacity: 1, scale: 1, rotation: -14, duration: dur.mid * D, ease: 'power3.in' })
+        .to(stamp, { scale: 0.94, duration: 0.12 * D, ease: 'power1.out' })
+        .to(stamp, { scale: 1, duration: 0.2 * D, ease: 'power2.out' });
     }
     if (kind === 'typewriter') {
       const full = Array.from(el.dataset.text ?? el.textContent);
