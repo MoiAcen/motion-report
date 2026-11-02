@@ -98,6 +98,8 @@ export function start(data) {
       gsap.set(el, { opacity: 0 });
     } else if (kind === 'highlight') {
       gsap.set(el, { backgroundSize: '0% 100%' });
+    } else if (kind === 'pop') {
+      gsap.set(el, { opacity: 0, scale: 0 });
     } else if (kind === 'knob') {
       gsap.set(el, { left: '0%' });
     } else if (kind === 'jitter') {
@@ -127,6 +129,10 @@ export function start(data) {
     }
     if (kind === 'wipe') {
       return gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.mid * D, ease: 'power2.inOut' });
+    }
+    if (kind === 'pop') {
+      // 勾號彈出：從 0 放大，略微過衝後定住
+      return gsap.fromTo(el, { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: dur.fast * D, ease: 'back.out(2.5)' });
     }
     if (kind === 'knob') {
       // 拉桿的圓點從 0 滑到 data-to（百分比）
