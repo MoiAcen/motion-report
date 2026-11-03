@@ -29,6 +29,9 @@ html, body { background: var(--bg); }
 .bar { position: relative; height: 16px; background: color-mix(in srgb, var(--fg) 12%, transparent); overflow: hidden; }
 .bar-fill { position: absolute; inset: 0; background: var(--accent-2); display: block; }
 
+/* 暗化遮罩（stamp）：延伸到整個視窗，不只蓋住投影片區塊 */
+.reveal .stamp-layer > .stamp-dim { inset: -100vh -100vw; }
+
 /* 跨頁共用元素 */
 .shared { position: absolute; background: var(--accent); border-radius: 2px; pointer-events: none; z-index: 2; }
 .motion-layer { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
