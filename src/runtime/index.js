@@ -33,6 +33,7 @@ export function start(data) {
   }
 
   let activeTl = null;
+  let jitterTimers = []; // data-motion="jitter" 的隨機跳動計時器，換頁時清除
   let flightTweens = [];
   let lastRects = null; // 上一頁共用元素的位置（以 .reveal 為座標）
 
@@ -88,20 +89,131 @@ export function start(data) {
     });
   }
 
+  // 指定效果：元素上的 data-motion 屬性（fade-in、highlight、typewriter）
+  function initMotion(el, kind) {
+    if (kind === 'typewriter') {
+      if (el.dataset.text == null) el.dataset.text = el.textContent;
+      el.textContent = '';
+    } else if (kind === 'fade-in') {
+      gsap.set(el, { opacity: 0 });
+    } else if (kind === 'highlight') {
+      gsap.set(el, { backgroundSize: '0% 100%' });
+    } else if (kind === 'pop') {
+      gsap.set(el, { opacity: 0, scale: 0 });
+    } else if (kind === 'knob') {
+      gsap.set(el, { left: '0%' });
+    } else if (kind === 'jitter') {
+      gsap.set(el, { scaleX: 0, transformOrigin: 'left center' });
+    } else if (kind === 'wipe') {
+      gsap.set(el, { clipPath: 'inset(0 100% 0 0)' });
+    } else if (kind === 'stamp-sequence') {
+      // 整組印章：遮罩淡入、印章蓋下，之後保留在畫面上
+      gsap.set(el, { opacity: 1 });
+      gsap.set(el.querySelector('.stamp-dim'), { opacity: 0 });
+      gsap.set(el.querySelector('.stamp'), { opacity: 0, scale: 2.4, rotation: -14 });
+    } else if (kind === 'runaway') {
+      el.textContent = '0';
+    } else if (kind === 'boom-sequence') {
+      gsap.set(el, { opacity: 1, x: 0 });
+      gsap.set(el.querySelector('.stamp-dim'), { opacity: 0 });
+      gsap.set(el.querySelector('.stamp'), { opacity: 0, scale: 3.2, rotation: -8 });
+    }
+  }
+
+  function motionAnim(el, kind) {
+    if (kind === 'fade-in') {
+      return gsap.fromTo(el, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: dur.mid * D, ease });
+    }
+    if (kind === 'highlight') {
+      return gsap.fromTo(el, { backgroundSize: '0% 100%' }, { backgroundSize: '100% 100%', duration: dur.mid * D, ease: 'power2.out' });
+    }
+    if (kind === 'wipe') {
+      return gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.mid * D, ease: 'power2.inOut' });
+    }
+    if (kind === 'pop') {
+      // 勾號彈出：從 0 放大，略微過衝後定住
+      return gsap.fromTo(el, { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: dur.fast * D, ease: 'back.out(2.5)' });
+    }
+    if (kind === 'knob') {
+      // 拉桿的圓點從 0 滑到 data-to（百分比）
+      return gsap.fromTo(el, { left: '0%' }, { left: `${el.dataset.to}%`, duration: dur.slow * D, ease: 'power2.inOut' });
+    }
+    if (kind === 'jitter') {
+      return null; // 隨機跳動在 playSection 結尾啟動
+    }
+    if (kind === 'runaway') {
+      // 數字往上計數，加速衝高，位數超出畫面右邊界後被裁掉，最後到 9,999,999,999,999
+      const obj = { v: 0 };
+      return gsap.to(obj, {
+        v: 9999999999999,
+        duration: dur.slow * 1.2 * D,
+        ease: 'power2.in',
+        onUpdate: () => (el.textContent = Math.round(obj.v).toLocaleString('en-US')),
+      });
+    }
+    if (kind === 'boom-sequence') {
+      // 全畫面遮罩蓋下，爆字從 3 倍大小重重砸下，接著整個畫面抖動
+      const dim = el.querySelector('.stamp-dim');
+      const stamp = el.querySelector('.stamp');
+      return gsap
+        .timeline()
+        .to(dim, { opacity: 1, duration: 0.15 * D })
+        .fromTo(stamp, { opacity: 0, scale: 3.2, rotation: -8 }, { opacity: 1, scale: 1, rotation: -8, duration: dur.fast * D, ease: 'power4.in' })
+        .to(el, { x: -14, duration: 0.05 * D })
+        .to(el, { x: 14, duration: 0.05 * D })
+        .to(el, { x: -8, duration: 0.05 * D })
+        .to(el, { x: 0, duration: 0.05 * D });
+    }
+    if (kind === 'stamp-sequence') {
+      const dim = el.querySelector('.stamp-dim');
+      const stamp = el.querySelector('.stamp');
+      return gsap
+        .timeline()
+        // 先停一下，讓觀眾看完 diff，再開始蓋章
+        .to({}, { duration: 1.5 * D })
+        .to(dim, { opacity: 1, duration: dur.mid * D })
+        // 印章蓋下：先縮放落下，接一個小幅回彈，之後保留在畫面上
+        .fromTo(stamp, { opacity: 0, scale: 2.4, rotation: -14 }, { opacity: 1, scale: 1, rotation: -14, duration: dur.fast * D, ease: 'power4.in' })
+        .to(stamp, { scale: 0.94, duration: 0.08 * D, ease: 'power1.out' })
+        .to(stamp, { scale: 1, duration: 0.14 * D, ease: 'power2.out' });
+    }
+    if (kind === 'typewriter') {
+      const full = Array.from(el.dataset.text ?? el.textContent);
+      const obj = { n: 0 };
+      // 每秒約 25 個字，最短 0.4 秒
+      const len = Math.max(0.4, full.length / 25) * D;
+      return gsap.to(obj, {
+        n: full.length,
+        duration: len,
+        ease: 'none',
+        onUpdate: () => (el.textContent = full.slice(0, Math.round(obj.n)).join('')),
+      });
+    }
+    return null;
+  }
+
   // 預設效果：依元素類型決定，對應 deck.md 的 presets
   function playSection(section) {
     if (activeTl) activeTl.kill();
+    jitterTimers.forEach(clearInterval);
+    jitterTimers = [];
     const tl = gsap.timeline();
     const targets = section.querySelectorAll(
-      '.eyebrow, h1, h2, .rule, p:not(.eyebrow), ul, [data-count], .bar-fill',
+      '.eyebrow, h1, h2, .rule, p:not(.eyebrow), ul, [data-count], .bar-fill, [data-motion]',
     );
     let first = true;
     const add = (anim) => {
+      if (!anim) return;
       tl.add(anim, first ? 0 : '-=0.15');
       first = false;
     };
     targets.forEach((el) => {
-      if (el.matches('.eyebrow')) {
+      if (el.dataset.motion) initMotion(el, el.dataset.motion);
+    });
+    targets.forEach((el) => {
+      if (el.dataset.motion) {
+        add(motionAnim(el, el.dataset.motion));
+      } else if (el.matches('.eyebrow')) {
         add(gsap.fromTo(el, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: dur.mid * D, ease }));
       } else if (el.matches('h1')) {
         add(gsap.fromTo(el, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: dur.slow * D, ease: 'power2.inOut' }));
@@ -123,6 +235,26 @@ export function start(data) {
       }
     });
     activeTl = tl;
+
+    // 隨機跳動：同一個 data-group 內的條共用同一個隨機倍率（例如同一份 token 數），
+    // 每 0.45 秒套用一次，因此各條之間的比例維持不變
+    const groups = {};
+    section.querySelectorAll('[data-motion="jitter"]').forEach((el) => {
+      const key = el.dataset.group ?? `solo-${Math.random()}`;
+      (groups[key] ??= []).push(el);
+    });
+    Object.values(groups).forEach((els) => {
+      const amp = Number(els[0].dataset.amp ?? 0.3);
+      const tick = () => {
+        const f = 1 + (Math.random() * 2 - 1) * amp;
+        els.forEach((el) => {
+          const base = Number(el.dataset.base ?? 0.5);
+          gsap.to(el, { scaleX: Math.min(1, base * f), duration: 0.3 * D, ease: 'power1.out' });
+        });
+      };
+      els.forEach((el) => gsap.to(el, { scaleX: Number(el.dataset.base ?? 0.5), duration: dur.mid * D, ease: 'power2.out', delay: 0.3 }));
+      jitterTimers.push(setInterval(tick, 450));
+    });
   }
 
   function updatePageNumber(section) {
