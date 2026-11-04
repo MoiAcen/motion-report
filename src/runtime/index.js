@@ -55,6 +55,7 @@ export function start(data) {
         w: r.width,
         h: r.height,
         bg: getComputedStyle(el).backgroundColor,
+        br: getComputedStyle(el).borderRadius,
         el,
       };
     });
@@ -69,7 +70,7 @@ export function start(data) {
       if (!t) return;
       const ghost = document.createElement('div');
       ghost.className = 'shared ghost';
-      ghost.style.cssText = `left:${f.x}px;top:${f.y}px;width:${f.w}px;height:${f.h}px;background:${f.bg}`;
+      ghost.style.cssText = `left:${f.x}px;top:${f.y}px;width:${f.w}px;height:${f.h}px;background:${f.bg};border-radius:${f.br}`;
       layer.appendChild(ghost);
       t.el.style.visibility = 'hidden';
       flightTweens.push(
@@ -78,6 +79,7 @@ export function start(data) {
           top: t.y,
           width: t.w,
           height: t.h,
+          borderRadius: t.br,
           duration: dur.slow * D,
           ease: 'power3.inOut',
           onComplete() {
